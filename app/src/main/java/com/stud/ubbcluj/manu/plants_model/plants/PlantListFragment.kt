@@ -50,6 +50,11 @@ class PlantListFragment : Fragment() {
             Log.v(TAG, "adding new plant button clicked")
             findNavController().navigate(R.id.PlantEditFragment)
         }
+        btn_logout.setOnClickListener{
+            Log.v(TAG, "user just logged out");
+            AuthRepository.logout()
+            findNavController().navigate(R.id.LoginFragment)
+        }
     }
 
     inner class PlantWebSocketClientFragment(address: String) : PlantWebSocketClient(address) {

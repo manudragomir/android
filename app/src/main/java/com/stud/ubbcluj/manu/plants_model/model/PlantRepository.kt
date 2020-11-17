@@ -1,53 +1,64 @@
 package com.stud.ubbcluj.manu.plants_model.model
 
 import android.util.Log
+import androidx.lifecycle.LiveData
+import com.stud.ubbcluj.manu.plants_model.model.local.PlantDao
 import com.stud.ubbcluj.manu.plants_model.model.remote.PlantApi
+import com.stud.ubbcluj.manu.utils.MyResult
 import com.stud.ubbcluj.manu.utils.TAG
 
-object PlantRepository {
-    var cachedItems: MutableList<Plant>? = null;
+class PlantRepository(private val plantDao: PlantDao) {
 
-    suspend fun loadAll(): List<Plant>{
-        Log.i(TAG, "load all plants");
-        if(cachedItems != null){
-            return cachedItems as List<Plant>;
+    val plants = plantDao.getAll();
+
+    suspend fun refresh(): MyResult<Boolean> {
+        return try {
+            Log.i(TAG, "trying to refresh plants")
+            val plants = PlantApi.service.find()
+            for (plant in plants) {
+                plantDao.insert(plant)
+            }
+            MyResult.Success(true)
+        } catch(e: Exception) {
+            MyResult.Error(e)
         }
-        cachedItems = mutableListOf();
-        val plants = PlantApi.service.find();
-        cachedItems?.addAll(plants);
-        return cachedItems as List<Plant>;
     }
 
-    suspend fun load(plantId: String): Plant {
-        Log.i(TAG, "load a plant")
-        val item = cachedItems?.find { it.id == plantId }
-        if (item != null) {
-            return item
+    fun getById(plantId: String): LiveData<Plant> {
+        Log.i(TAG, "trying to get a plant")
+        return plantDao.getById(plantId)
+    }
+
+    suspend fun save(plant: Plant): MyResult<Plant> {
+        return try {
+            Log.i(TAG, "trying to save a plant")
+            val createdPlant = PlantApi.service.create(plant)
+            plantDao.insert(createdPlant)
+            MyResult.Success(createdPlant)
+        } catch(e: Exception) {
+            MyResult.Error(e)
         }
-        return PlantApi.service.read(plantId)
     }
 
-    suspend fun save(item: Plant): Plant {
-        Log.i(TAG, "save a plant")
-        val createdPlant = PlantApi.service.create(item)
-        cachedItems?.add(createdPlant)
-        return createdPlant
-    }
-
-    suspend fun update(item: Plant): Plant {
-        Log.i(TAG, "update a plant")
-        val updatedItem = PlantApi.service.update(item.id, item)
-        val index = cachedItems?.indexOfFirst { it.id == item.id }
-        if (index != null) {
-            cachedItems?.set(index, updatedItem)
+    suspend fun update(plant: Plant): MyResult<Plant> {
+        return try {
+            Log.i(TAG, "trying to update a plant")
+            val updatedPlant = PlantApi.service.update(plant._id, plant)
+            plantDao.update(updatedPlant)
+            MyResult.Success(updatedPlant)
+        } catch(e: Exception) {
+            MyResult.Error(e)
         }
-        return updatedItem
     }
 
-    suspend fun delete(idPlant: String): Boolean? {
-        Log.i(TAG, "trying to delete a plant")
-        val deletedPlant = PlantApi.service.delete(idPlant)
-        cachedItems?.remove(deletedPlant)
-        return true
+    suspend fun delete(idPlant: String): MyResult<Plant> {
+        return try {
+            Log.i(TAG, "trying to delete a plant")
+            val deletedPlant = PlantApi.service.delete(idPlant)
+            plantDao.delete(idPlant)
+            MyResult.Success(deletedPlant)
+        } catch(e: Exception) {
+            MyResult.Error(e)
+        }
     }
 }

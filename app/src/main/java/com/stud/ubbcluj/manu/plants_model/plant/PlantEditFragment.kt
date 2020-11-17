@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.stud.ubbcluj.manu.R
+import com.stud.ubbcluj.manu.plants_model.model.Plant
 import com.stud.ubbcluj.manu.utils.TAG
 import kotlinx.android.synthetic.main.plant_edit.*
 
@@ -21,13 +22,14 @@ class PlantEditFragment : Fragment() {
 
     private lateinit var plantEditViewModel: PlantEditViewModel
     private var plantId: String? = null
+    private var plant: Plant? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.v(TAG, "on creat")
         arguments?.let{
             if(it.containsKey(PLANT_ID)){
-                plantId = it.getString(PLANT_ID)
+                plantId = it.getString(PLANT_ID).toString()
             }
         }
     }
@@ -47,10 +49,13 @@ class PlantEditFragment : Fragment() {
         setupViewModel()
         btn_save.setOnClickListener{
             Log.v(TAG, "save or update a plant")
-            val plantName = nameView.text.toString()
-            val plantDescription = descriptionView.text.toString()
-            var plantType = typeView.text.toString()
-            plantEditViewModel.saveOrUpdatePlant(plantName, plantDescription, plantType)
+            val auxPlant = plant
+            if(auxPlant != null) {
+                auxPlant.name = nameView.text.toString()
+                auxPlant.description = descriptionView.text.toString()
+                auxPlant.type = typeView.text.toString()
+                plantEditViewModel.saveOrUpdatePlant(auxPlant)
+            }
         }
 
         btn_delete.setOnClickListener{
@@ -70,7 +75,7 @@ class PlantEditFragment : Fragment() {
         plantEditViewModel = ViewModelProvider(this).get(PlantEditViewModel::class.java)
 
         plantEditViewModel.plant.observe(viewLifecycleOwner, { plant ->
-            Log.v(TAG, "update plant")
+            Log.v(TAG, "set plant on window")
             nameView.setText(plant.name)
             descriptionView.setText(plant.description)
             typeView.setText(plant.type)
@@ -113,6 +118,22 @@ class PlantEditFragment : Fragment() {
                 findNavController().navigateUp()
             }
         })
+
+        val id = plantId
+        if(id == null){
+            plant = Plant("", "", "", "")
+        }
+        else{
+            plantEditViewModel.loadPlant(id).observe(viewLifecycleOwner, {
+                Log.v(TAG, "update items")
+                if (it != null) {
+                    plant = it
+                    nameView.setText(it.name)
+                    descriptionView.setText(it.description)
+                    typeView.setText(it.type)
+                }
+            })
+        }
 
         plantId?.let { plantEditViewModel.loadPlant(it) }
     }

@@ -1,16 +1,16 @@
 package com.stud.ubbcluj.manu.plants_model.plant
 
+import android.app.Application
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.stud.ubbcluj.manu.plants_model.model.Plant
 import com.stud.ubbcluj.manu.plants_model.model.PlantRepository
+import com.stud.ubbcluj.manu.plants_model.model.local.PlantDatabase
+import com.stud.ubbcluj.manu.utils.MyResult
 import com.stud.ubbcluj.manu.utils.TAG
 import kotlinx.coroutines.launch
 
-class PlantEditViewModel: ViewModel() {
+class PlantEditViewModel(application: Application): AndroidViewModel(application) {
     private val mutablePlant = MutableLiveData<Plant>().apply { value = Plant("", "", "", "") }
     private val mutableIsPlantFetching = MutableLiveData<Boolean>().apply{ value = false}
     private val mutableFetchingException = MutableLiveData<Exception>().apply{ value = null }
@@ -25,47 +25,40 @@ class PlantEditViewModel: ViewModel() {
     val deletingException: LiveData<Exception> = mutableDeletingException
     val jobDone: LiveData<Boolean> = mutableJobDone
 
-    fun loadPlant(plantId: String){
-        viewModelScope.launch {
-            Log.i(TAG,"plant is loading")
-            mutableIsPlantFetching.value = true
-            mutableFetchingException.value = null
-            try{
-                mutablePlant.value = PlantRepository.load(plantId)
-                Log.i(TAG, "plant edit view model load plant")
-                mutableIsPlantFetching.value = false
-            } catch(e: Exception){
-                Log.w(TAG, "plant edit view model exception loading plant", e)
-                mutableFetchingException.value = e
-                mutableIsPlantFetching.value = false
-            }
-        }
+    val plantRepository: PlantRepository
+
+    init {
+        val itemDao = PlantDatabase.getDatabase(application, viewModelScope).plantDao()
+        plantRepository = PlantRepository(itemDao)
     }
 
-    fun saveOrUpdatePlant(name: String, description: String, type: String){
-        viewModelScope.launch{
-            Log.i(TAG, "plant edit view model save or update plant")
-            val currentPlant = mutablePlant.value ?: return@launch
-            currentPlant.name = name
-            currentPlant.description = description
-            currentPlant.type = type
+    fun loadPlant(plantId: String): LiveData<Plant>{
+        Log.v(TAG, "get item by id")
+        return plantRepository.getById(plantId)
+    }
 
+    fun saveOrUpdatePlant(plant: Plant){
+        viewModelScope.launch {
+            Log.v(TAG, "save or update plant...");
             mutableIsPlantFetching.value = true
             mutableFetchingException.value = null
-
-            try{
-                if(currentPlant.id.isEmpty()){
-                    mutablePlant.value = PlantRepository.save(currentPlant)
-                } else{
-                    mutablePlant.value = PlantRepository.update(currentPlant)
-                }
-                mutableIsPlantFetching.value = false
-                mutableJobDone.value = true
-            } catch(e: Exception){
-                Log.e(TAG, "error when saving/updating item", e)
-                mutableFetchingException.value = e
-                mutableIsPlantFetching.value = false
+            val result: MyResult<Plant>
+            if (plant._id.isNotEmpty()) {
+                result = plantRepository.update(plant)
+            } else {
+                result = plantRepository.save(plant)
             }
+            when(result) {
+                is MyResult.Success -> {
+                    Log.d(TAG, "saveOrUpdateItem succeeded");
+                }
+                is MyResult.Error -> {
+                    Log.w(TAG, "saveOrUpdateItem failed", result.exception);
+                    mutableFetchingException.value = result.exception
+                }
+            }
+            mutableJobDone.value = true
+            mutableIsPlantFetching.value = false
         }
     }
 
@@ -77,7 +70,7 @@ class PlantEditViewModel: ViewModel() {
             mutableDeletingException.value = null
 
             try{
-                val deletionResult = PlantRepository.delete(plantId)
+                val deletionResult = plantRepository.delete(plantId)
                 Log.v(TAG, deletionResult.toString())
                 mutableIsPlantDeleting.value = false
                 mutableDeletingException.value = null

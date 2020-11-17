@@ -1,92 +1,49 @@
 package com.stud.ubbcluj.manu.plants_model.plants
 
+import android.app.Application
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.google.gson.Gson
 import com.stud.ubbcluj.manu.plants_model.model.Plant
 import com.stud.ubbcluj.manu.plants_model.model.PlantRepository
+import com.stud.ubbcluj.manu.plants_model.model.local.PlantDatabase
 import com.stud.ubbcluj.manu.plants_model.model.remote.SocketData
+import com.stud.ubbcluj.manu.utils.MyResult
 import com.stud.ubbcluj.manu.utils.TAG
 import kotlinx.coroutines.launch
 
 
-class PlantListViewModel() : ViewModel() {
-    private val mutablePlants = MutableLiveData<List<Plant>>().apply { value = emptyList() }
+class PlantListViewModel(application: Application) : AndroidViewModel(application) {
     private val mutableLoading = MutableLiveData<Boolean>().apply { value = false }
     private val mutableException = MutableLiveData<Exception>().apply { value = null }
 
-    val plants: LiveData<List<Plant>> = mutablePlants
+    val plants: LiveData<List<Plant>>
     val loading: LiveData<Boolean> = mutableLoading
     val loadingException: LiveData<Exception> = mutableException
 
-    fun loadItems() {
-        viewModelScope.launch {
-            Log.v(TAG, "loading plants in view model")
-            mutableLoading.value = true
-            mutableException.value = null
-            try {
-                mutablePlants.value = PlantRepository.loadAll()
-                Log.i(TAG, "all items loaded succesfully")
-                mutableLoading.value = false
-            }catch (e: Exception){
-                Log.w(TAG, "load items failed", e)
-                mutableLoading.value = false
-                mutableException.value = e
-            }
-        }
+    val plantRepository: PlantRepository
+
+    init {
+        val plantDao = PlantDatabase.getDatabase(application, viewModelScope).plantDao()
+        plantRepository = PlantRepository(plantDao)
+        plants = plantRepository.plants
     }
 
-    fun newItemIncoming(message: String?){
-        Log.v(TAG, "on message")
-        viewModelScope.launch{
-            if(message == null){
-                return@launch
-            }
-
-
-            Log.v(TAG, message)
-            val gson = Gson()
-            val content = gson.fromJson(message, SocketData::class.java)
-
-            val event = content.event
-            val plant = content.payload.item
-
-            Log.v(TAG, plant.toString())
-            Log.v(TAG, event)
-
-            PlantRepository.cachedItems?.toString()?.let { Log.v(TAG, "HELLO" + it) }
-
-            val containsRepo = PlantRepository.cachedItems?.indexOfFirst { it.id == plant.id }
-            Log.v(TAG, "HEI" + containsRepo.toString())
-
-            when(event){
-                "created" -> {
-                    if(containsRepo == -1){
-                        PlantRepository.cachedItems?.add(plant)
-                    }
+    fun loadItems() {
+        viewModelScope.launch {
+            Log.v(TAG, "refresh...");
+            mutableLoading.value = true
+            mutableException.value = null
+            when (val result = plantRepository.refresh()) {
+                is MyResult.Success -> {
+                    Log.d(TAG, "refresh succeeded");
                 }
-                "deleted" -> {
-                    if(containsRepo != -1){
-                        PlantRepository.cachedItems?.remove(plant)
-                    }
-                }
-                "updated" -> {
-                    if(PlantRepository.cachedItems != null){
-                        val index = PlantRepository.cachedItems?.indexOfFirst { it.id == plant.id }
-                        if (index != null) {
-                            PlantRepository.cachedItems!![index] = plant
-                        }
-                    }
+                is MyResult.Error -> {
+                    Log.w(TAG, "refresh failed", result.exception);
+                    mutableException.value = result.exception
                 }
             }
-
-
-            val list = mutableListOf<Plant>()
-            list.addAll(PlantRepository.cachedItems!!)
-            mutablePlants.value = list
+            mutableLoading.value = false
         }
     }
 }

@@ -30,9 +30,11 @@ class PlantListAdapter(
     init {
         onPlantClickEvent = View.OnClickListener { view ->
             val plant = view.tag as Plant
+
+            Log.i(TAG, plant.toString());
             fragment.findNavController().navigate(R.id.PlantEditFragment,
                 Bundle().apply{
-                    putString(PlantEditFragment.PLANT_ID, plant.id)
+                    putString(PlantEditFragment.PLANT_ID, plant._id)
                 }
             )
         }

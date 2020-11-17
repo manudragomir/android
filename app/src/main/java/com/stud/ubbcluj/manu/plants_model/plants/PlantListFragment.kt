@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.stud.ubbcluj.manu.R
+import com.stud.ubbcluj.manu.auth.data.AuthRepository
 import com.stud.ubbcluj.manu.plants_model.model.remote.PlantWebSocketClient
 import com.stud.ubbcluj.manu.utils.TAG
 import kotlinx.android.synthetic.main.plant_list.*
@@ -40,6 +41,10 @@ class PlantListFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         Log.v(TAG, "on activity created")
+        if (!AuthRepository.isLoggedIn) {
+            findNavController().navigate(R.id.LoginFragment)
+            return;
+        }
         setupPlantList()
         btn_new.setOnClickListener{
             Log.v(TAG, "adding new plant button clicked")
@@ -50,13 +55,12 @@ class PlantListFragment : Fragment() {
     inner class PlantWebSocketClientFragment(address: String) : PlantWebSocketClient(address) {
         override fun onMessage(message: String?) {
             Log.v(TAG, "On message")
-            plantListViewModel.newItemIncoming(message)
         }
     }
 
     private fun setupWebSockets(){
         plantWebSocketClient = PlantWebSocketClientFragment("ws://192.168.1.2:3333/")
-        plantWebSocketClient.connect()
+       // plantWebSocketClient.connect()
     }
 
     private fun setupPlantList(){

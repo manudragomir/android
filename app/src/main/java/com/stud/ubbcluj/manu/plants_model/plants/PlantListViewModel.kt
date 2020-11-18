@@ -30,6 +30,20 @@ class PlantListViewModel(application: Application) : AndroidViewModel(applicatio
         plants = plantRepository.plants
     }
 
+    fun newItemIncoming(message: String) {
+        Log.v(TAG, "new item incoming")
+        viewModelScope.launch {
+            if (message == null) {
+                return@launch
+            }
+
+            Log.v(TAG, message)
+            val content = Gson().fromJson(message, SocketData::class.java)
+            Log.v(TAG, content.toString())
+            plantRepository.refresh()
+        }
+    }
+
     fun loadItems() {
         viewModelScope.launch {
             Log.v(TAG, "refresh...");

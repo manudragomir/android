@@ -64,26 +64,28 @@ class PlantListFragment : Fragment() {
         }
 
         if(!AuthRepository.isOffline){
-            //setupWebSockets()
+            setupWebSockets()
         }
     }
 
     inner class PlantWebSocketClientFragment(address: String) : PlantWebSocketClient(address) {
         override fun onOpen(handshakedata: ServerHandshake?) {
+            Log.v(TAG, "on open")
             if(Api.tokenInterceptor.token != null){
                 val payload = Payload(Api.tokenInterceptor.token!!)
                 send(Gson().toJson(SocketData("authorization", payload )))
             }
         }
 
-        override fun onMessage(message: String?) {
+        override fun onMessage(message: String) {
             Log.v(TAG, "On message")
+            plantListViewModel.newItemIncoming(message)
         }
     }
 
     private fun setupWebSockets(){
         plantWebSocketClient = PlantWebSocketClientFragment("ws://192.168.1.2:3333/")
-       // plantWebSocketClient.connect()
+        plantWebSocketClient.connect()
     }
 
     private fun setupPlantList(){

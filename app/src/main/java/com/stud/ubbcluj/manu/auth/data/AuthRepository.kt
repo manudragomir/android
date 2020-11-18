@@ -11,6 +11,8 @@ object AuthRepository {
     val isLoggedIn: Boolean
         get() = user != null
 
+    var isOffline: Boolean = false
+
     init {
         user = null
     }

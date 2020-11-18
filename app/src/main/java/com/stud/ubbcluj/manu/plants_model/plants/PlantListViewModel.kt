@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.*
 import com.google.gson.Gson
+import com.stud.ubbcluj.manu.auth.data.AuthRepository
 import com.stud.ubbcluj.manu.plants_model.model.Plant
 import com.stud.ubbcluj.manu.plants_model.model.PlantRepository
 import com.stud.ubbcluj.manu.plants_model.model.local.PlantDatabase
@@ -39,8 +40,10 @@ class PlantListViewModel(application: Application) : AndroidViewModel(applicatio
                     Log.d(TAG, "refresh succeeded");
                 }
                 is MyResult.Error -> {
-                    Log.w(TAG, "refresh failed", result.exception);
-                    mutableException.value = result.exception
+                    if(!AuthRepository.isOffline) {
+                        Log.w(TAG, "refresh failed", result.exception);
+                        mutableException.value = result.exception
+                    }
                 }
             }
             mutableLoading.value = false

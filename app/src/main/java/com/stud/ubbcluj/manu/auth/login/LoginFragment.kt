@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.stud.ubbcluj.manu.R
+import com.stud.ubbcluj.manu.auth.data.AuthRepository
 import com.stud.ubbcluj.manu.utils.MyResult
 import com.stud.ubbcluj.manu.utils.TAG
 import kotlinx.android.synthetic.main.fragment_login.*
@@ -28,6 +29,10 @@ class LoginFragment : Fragment() {
         super.onActivityCreated(savedInstanceState)
         viewModel = ViewModelProvider(this).get(LoginViewModel::class.java)
         setupLoginForm()
+        btn_go_offline.setOnClickListener{
+            AuthRepository.isOffline = true
+            findNavController().navigate(R.id.PlantListFragment)
+        }
     }
 
     private fun setupLoginForm() {

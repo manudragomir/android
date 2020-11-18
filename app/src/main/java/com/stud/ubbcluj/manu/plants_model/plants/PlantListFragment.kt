@@ -41,9 +41,12 @@ class PlantListFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         Log.v(TAG, "on activity created")
-        if (!AuthRepository.isLoggedIn) {
+        if (!AuthRepository.isLoggedIn && !AuthRepository.isOffline) {
             findNavController().navigate(R.id.LoginFragment)
             return;
+        }
+        if(AuthRepository.isOffline){
+            checkbox_is_offline.visibility = View.VISIBLE
         }
         setupPlantList()
         btn_new.setOnClickListener{

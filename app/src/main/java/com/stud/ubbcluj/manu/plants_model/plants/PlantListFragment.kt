@@ -9,11 +9,16 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import com.google.gson.Gson
 import com.stud.ubbcluj.manu.R
 import com.stud.ubbcluj.manu.auth.data.AuthRepository
+import com.stud.ubbcluj.manu.plants_model.model.remote.Payload
 import com.stud.ubbcluj.manu.plants_model.model.remote.PlantWebSocketClient
+import com.stud.ubbcluj.manu.plants_model.model.remote.SocketData
+import com.stud.ubbcluj.manu.utils.Api
 import com.stud.ubbcluj.manu.utils.TAG
 import kotlinx.android.synthetic.main.plant_list.*
+import org.java_websocket.handshake.ServerHandshake
 
 /**
  * A simple [Fragment] subclass as the second destination in the navigation.
@@ -26,7 +31,6 @@ class PlantListFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.v(TAG,"fragment created")
-        setupWebSockets()
     }
 
     override fun onCreateView(
@@ -58,9 +62,20 @@ class PlantListFragment : Fragment() {
             AuthRepository.logout()
             findNavController().navigate(R.id.LoginFragment)
         }
+
+        if(!AuthRepository.isOffline){
+            //setupWebSockets()
+        }
     }
 
     inner class PlantWebSocketClientFragment(address: String) : PlantWebSocketClient(address) {
+        override fun onOpen(handshakedata: ServerHandshake?) {
+            if(Api.tokenInterceptor.token != null){
+                val payload = Payload(Api.tokenInterceptor.token!!)
+                send(Gson().toJson(SocketData("authorization", payload )))
+            }
+        }
+
         override fun onMessage(message: String?) {
             Log.v(TAG, "On message")
         }

@@ -43,21 +43,23 @@ class PlantEditViewModel(application: Application): AndroidViewModel(application
             mutableIsPlantFetching.value = true
             mutableFetchingException.value = null
             val result: MyResult<Plant>
+            Log.v(TAG, "ID_UL LA SAVE ESTE" + plant._id)
             if (plant._id.isNotEmpty()) {
                 result = plantRepository.update(plant)
             } else {
+                Log.v(TAG, "SE INTRA PE RAMURA DE SAVE")
                 result = plantRepository.save(plant)
             }
             when(result) {
                 is MyResult.Success -> {
                     Log.d(TAG, "saveOrUpdateItem succeeded");
+                    mutableJobDone.value = true
                 }
                 is MyResult.Error -> {
                     Log.w(TAG, "saveOrUpdateItem failed", result.exception);
                     mutableFetchingException.value = result.exception
                 }
             }
-            mutableJobDone.value = true
             mutableIsPlantFetching.value = false
         }
     }

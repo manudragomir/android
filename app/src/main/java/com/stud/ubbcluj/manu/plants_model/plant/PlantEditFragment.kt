@@ -51,7 +51,13 @@ class PlantEditFragment : Fragment() {
             Log.v(TAG, "save or update a plant")
             val auxPlant = plant
             if(auxPlant != null) {
-                auxPlant.name = nameView.text.toString()
+                if(auxPlant._id == null){
+                    Log.v(TAG, "E null");
+                }
+                if(auxPlant._id == ""){
+                    Log.v(TAG, auxPlant._id)
+                }
+                auxPlant.name = nameView.text.toString();
                 auxPlant.description = descriptionView.text.toString()
                 auxPlant.type = typeView.text.toString()
                 plantEditViewModel.saveOrUpdatePlant(auxPlant)

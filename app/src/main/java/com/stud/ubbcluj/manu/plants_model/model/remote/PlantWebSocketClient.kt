@@ -10,10 +10,6 @@ import java.net.URI
 
 abstract class PlantWebSocketClient(address: String): WebSocketClient(URI(address)){
 
-    override fun onOpen(handshakedata: ServerHandshake?) {
-        Log.v(TAG, "on open")
-    }
-
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
     }
 

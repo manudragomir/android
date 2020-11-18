@@ -31,8 +31,10 @@ class PlantRepository(private val plantDao: PlantDao) {
 
     suspend fun save(plant: Plant): MyResult<Plant> {
         return try {
-            Log.i(TAG, "trying to save a plant")
+            Log.i(TAG, "trying to save a plant in repo")
+            Log.i(TAG, plant.toString())
             val createdPlant = PlantApi.service.create(plant)
+            Log.v(TAG, "REPO RETURN $createdPlant")
             plantDao.insert(createdPlant)
             MyResult.Success(createdPlant)
         } catch(e: Exception) {
